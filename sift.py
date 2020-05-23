@@ -1,35 +1,98 @@
+import math
 import cv2 as cv
+import numpy as np
+
+from PIL import Image, ImageFilter
+from torchvision.transforms import Compose, CenterCrop, Resize
+
+IMG_SIZE = 48  # Size of image crop (must be divisible by 16).
+SUB_IMG_SIZE = int(math.sqrt(IMG_SIZE ** 2 / 16))  # Size of sub image for dense SIFT.
 
 
-# Wrapper class for using the OpenCV SIFT operation
 class Sift:
 
     def __init__(self):
-        self.sift = cv.xfeatures2d.SIFT_create()
+        # Ensure the SIFT detector creates no more than 16 key points.
+        self.sift = cv.xfeatures2d.SIFT_create(16)
 
-    def detect_features(self, img_name):
+    def perform_dense_sift(self, img_array):
         """
-        Detect SIFT features in image after blurring and converting to grayscale.
+        Detect dense SIFT features in image.
 
-        :param img_name: the input image name in single quotes.
-        :return: the image with SIFT features drawn on.
+        :param img_array: the input image as a numpy array.
+        :return: array of 2048 features.
         """
-        img = cv.imread(img_name, cv.IMREAD_GRAYSCALE)
-        med = cv.medianBlur(img, 5)
 
-        key_points, descriptors = self.sift.detectAndCompute(med, None)
-        img = cv.drawKeypoints(med, key_points, None)
+        # Define our key points as the middle points of 16 equal areas in the image.
+        key_points = [cv.KeyPoint(x + SUB_IMG_SIZE / 2, y + SUB_IMG_SIZE / 2, SUB_IMG_SIZE)
+                      for y in range(0, img_array.shape[0], SUB_IMG_SIZE)
+                      for x in range(0, img_array.shape[1], SUB_IMG_SIZE)]
 
-        cv.imshow("Image", img)
-        cv.waitKey(0)
-        cv.destroyAllWindows()
+        # Draw result
+        # cv_img = cv.cvtColor(img_array, cv.COLOR_RGBA2BGR)
+        # img = cv.drawKeypoints(cv_img, key_points, None, -1, cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+        # cv.imshow("Dense key points", img)
+        # cv.waitKey(0)
+        # cv.destroyAllWindows()
 
-        return img
+        # Compute descriptors from given key points.
+        descriptors = self.sift.compute(img_array, key_points)
+
+        # Flatten to single feature container.
+        features = descriptors[1].reshape([1, 2048])
+        return features
+
+    def perform_sift(self, img_array):
+        """
+        Detect top 16 SIFT features in image.
+
+        :param img_array: the input image as a numpy array.
+        :return: array of 2048 features.
+        """
+
+        # Detect top 16 SIFT features
+        key_points, descriptors = self.sift.detectAndCompute(img_array, None)
+
+        # Draw result
+        # cv_img = cv.cvtColor(img_array, cv.COLOR_RGBA2BGR)
+        # img = cv.drawKeypoints(cv_img, key_points, None)
+        # cv.imshow("Top key points", img)
+        # cv.waitKey(0)
+        # cv.destroyAllWindows()
+
+        # Flatten to single feature container.
+        features = descriptors.reshape([1, 2048])
+        return features
+
+
+def process_image(img_name):
+    img = Image.open(img_name)
+    width, height = img.size
+    crop_size = width if width <= height else height
+
+    # Blurring for SIFT.
+    img = img.filter(ImageFilter.BLUR)
+
+    # Crop to be square, resize to desired size.
+    crop = Compose([
+        CenterCrop(crop_size),
+        Resize(IMG_SIZE)
+    ])
+
+    img = crop(img)
+
+    # Return as array.
+    return np.array(img)
 
 
 def main():
+    # Transform image to be cropped, blurred and gray-scaled.
+    img_array = process_image('cat.png')
+
+    # Perform SIFT feature detection and dense SIFT feature detection.
     sift = Sift()
-    sift.detect_features('disparity.png')
+    sift_features = sift.perform_sift(img_array)
+    dense_sift_features = sift.perform_dense_sift(img_array)
 
 
 if __name__ == "__main__":
