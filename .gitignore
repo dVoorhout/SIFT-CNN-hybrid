@@ -224,3 +224,6 @@ fabric.properties
 
 # cocoapi
 cocapi
+
+# cifar10
+cifar10
