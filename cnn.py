@@ -1,5 +1,15 @@
 import torch.nn as nn
+import os
+from typing import Dict, Tuple
 
+import PIL
+import torchvision
+from PIL.Image import Image
+from torch import Tensor
+from torch.utils.data import DataLoader
+from torch.utils.data import Dataset
+import torchvision
+import random
 # import torch.nn.init as weight_init
 
 
@@ -8,37 +18,43 @@ import torch.nn as nn
 class Cnn(nn.Module):
     def __init__(self):
         super().__init__()
-        filter_size = 3
-        padding_width = 1
-        base_filters = 32
-        total_layers = 3
+        padding_width = 0
+        base_filters = 96
         input_channels = 3
-        dropout_values = [0.1, 0.1, 0.4]
-        stride_size = 2
 
         architecture = []
 
         # mean = 0.0
         # std = 0.02
+        architecture += [nn.Dropout(p=0.2, inplace=False)]
+        architecture += [nn.Conv2d(input_channels, base_filters,
+                               kernel_size=5, stride=1, padding=padding_width)]
+        architecture +=[nn.ReLU()]
 
-        for n in range(total_layers):
-            if n == 0:
-                sublayer_1 = nn.Conv2d(input_channels, base_filters,
-                                       kernel_size=filter_size, stride=stride_size, padding=padding_width)
-            else:
-                sublayer_1 = nn.Conv2d(base_filters * 2**n, base_filters * 2**n,
-                                       kernel_size=filter_size, stride=stride_size, padding=padding_width)
+        architecture += [nn.Conv2d(base_filters, base_filters,
+                               kernel_size=3, stride=2, padding=padding_width)]
+        architecture += [nn.ReLU()]
+        architecture += [nn.Dropout(p=0.5, inplace=False)]
 
-            sublayer_2 = nn.Conv2d(base_filters * 2**n, base_filters * 2**(n + 1),
-                               kernel_size=filter_size, stride=stride_size, padding=padding_width)
+        architecture += [nn.Conv2d(base_filters, base_filters * 2,
+                           kernel_size=5, stride=1, padding=padding_width)]
+        architecture += [nn.ReLU()]
 
-            # weight_init.normal_(sublayer_1.weight, mean=mean, std=std) # Not sure how they initialize their weights
-            # weight_init.normal_(sublayer_2.weight, mean=mean, std=std)
+        architecture += [nn.Conv2d(base_filters * 2, base_filters * 2,
+                                  kernel_size=3, stride=2, padding=padding_width)]
+        architecture += [nn.ReLU()]
+        architecture += [nn.Dropout(p=0.5, inplace=False)]
 
-            architecture += [sublayer_1]
-            architecture += [sublayer_2]
-            architecture += [nn.MaxPool2d(kernel_size=filter_size, stride=(stride_size, stride_size))]
-            architecture += [nn.Dropout(dropout_values[n])]
+        architecture += [nn.Conv2d(base_filters * 2, base_filters * 2,
+                                  kernel_size=3, stride=1, padding=padding_width)]
+        architecture += [nn.ReLU()]
+
+        architecture += [nn.Conv2d(base_filters * 2, base_filters * 2,
+                                  kernel_size=1, stride=1, padding=0)]
+        architecture += [nn.ReLU()]
+
+        # weight_init.normal_(sublayer_1.weight, mean=mean, std=std) # Not sure how they initialize their weights
+        # weight_init.normal_(sublayer_2.weight, mean=mean, std=std)
 
         self.model = nn.Sequential(*architecture)
 
@@ -50,6 +66,13 @@ class Cnn(nn.Module):
 def main():
     cnn = Cnn()
     print(cnn)
+    path_to_picture = 'test_resources/iconfinder_Award_132022.png'
+    input = PIL.Image.open(path_to_picture).convert('RGB')
+    input = torchvision.transforms.ToTensor()(input)
+    input = input.unsqueeze(0)
+    result = cnn.forward(input)
+    print(result)
+    print(result.shape)
 
 
 if __name__ == "__main__":
