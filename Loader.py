@@ -3,35 +3,17 @@ from torchvision import datasets, transforms
 import torch
 
 class Loader():
-    def __init__(self, validation=False, inputSize=3, n_classes=10, baseModel=[True, False, False],
-                 modifiedModel=[True, False, False, False], dropOut=True, BN=False, bestModel_allLR=False,
-                 lrPair=[0.1, 0.05, 0.01], epochNum=350):
+    def __init__(self, validation=False):
         self.model = None
         self.train_loader = None
         self.test_loader = None
         self.valida_folder = None
         self.validation = validation
-        self.baseModel = baseModel
-        self.modifiedModel = modifiedModel
-        self.BN = BN
-        self.dropOut = dropOut
-        self.global_loss = 100000000.0
-        self.global_acc = 0
-        self.global_model_path = ''
-        self.lr = 0
         self.cuda = torch.cuda.is_available()
         self.train_batch_size = 256
         self.test_batch_size = 64
-        self.best_loss = float("inf")
-        self.best_epoch = -1
         self.dataset_path = './cifar10'
         self.gsync_save = True
-        #self.gsync = utils.GDriveSync()
-        self.bestModel_allLR = bestModel_allLR
-        self.lrPair = lrPair
-        self.epochNum = epochNum
-        self.inputSize=inputSize
-        self.n_classes=n_classes
 
     def createDataset(self):
         CIFAR10_Train = datasets.CIFAR10(root=self.dataset_path, train=True, download=True)
