@@ -65,35 +65,3 @@ class Sift:
         return features
 
 
-def process_image(img_name):
-    img = Image.open(img_name)
-    width, height = img.size
-    crop_size = width if width <= height else height
-
-    # Blurring for SIFT.
-    img = img.filter(ImageFilter.BLUR)
-
-    # Crop to be square, resize to desired size.
-    crop = Compose([
-        CenterCrop(crop_size),
-        Resize(IMG_SIZE)
-    ])
-
-    img = crop(img)
-
-    # Return as array.
-    return np.array(img)
-
-
-def main():
-    # Transform image to be cropped, blurred and gray-scaled.
-    img_array = process_image('cat.png')
-
-    # Perform SIFT feature detection and dense SIFT feature detection.
-    sift = Sift()
-    sift_features = sift.perform_sift(img_array)
-    dense_sift_features = sift.perform_dense_sift(img_array)
-
-
-if __name__ == "__main__":
-    main()
