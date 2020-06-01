@@ -10,8 +10,8 @@ class Loader():
         self.valida_folder = None
         self.validation = validation
         self.cuda = torch.cuda.is_available()
-        self.train_batch_size = 256
-        self.test_batch_size = 64
+        self.train_batch_size = 1
+        self.test_batch_size = 1
         self.dataset_path = './cifar10'
         self.gsync_save = True
 
@@ -37,7 +37,7 @@ class Loader():
             transforms.RandomCrop(32, padding=4),
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
-            transforms.Normalize(train_mean, train_std),
+            #transforms.Normalize(train_mean, train_std),
         ])
 
         del CIFAR10_Train
@@ -55,8 +55,9 @@ class Loader():
 
         transform_test = transforms.Compose([
             transforms.ToTensor(),
-            transforms.Normalize(train_mean, train_std),
+            #transforms.Normalize(train_mean, train_std),
         ])
+
         self.test_loader = torch.utils.data.DataLoader(
             datasets.CIFAR10(root=self.dataset_path, train=False, download=True,
                              transform=transform_test),

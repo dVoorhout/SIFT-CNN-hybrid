@@ -4,22 +4,19 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.autograd import Variable
 from torchsummary import summary
-from Model import Model
+from classifier import Classifier
+from sift import Sift
 import os
 
 
 class Training():
-    def __init__(self, validation=False, inputSize=3, n_classes=10, baseModel=[True, False, False],
-                 modifiedModel=[True, False, False, False], dropOut=True, BN=False, bestModel_allLR=False,
-                 lrPair=[0.1, 0.05, 0.01], epochNum=350):
+    def __init__(self, train_loader, test_loader, validation=False, sift_size=1152, n_classes=10, dropOut=True, bestModel_allLR=False,
+                 lrPair=[0.001, 0.05, 0.01], epochNum=350):
         self.model = None
-        self.train_loader = None
-        self.test_loader = None
+        self.train_loader = train_loader
+        self.test_loader = test_loader
         self.valida_folder = None
         self.validation = validation
-        self.baseModel = baseModel
-        self.modifiedModel = modifiedModel
-        self.BN = BN
         self.dropOut = dropOut
         self.global_loss = 100000000.0
         self.global_acc = 0
@@ -35,11 +32,12 @@ class Training():
         self.bestModel_allLR = bestModel_allLR
         self.lrPair = lrPair
         self.epochNum = epochNum
-        self.inputSize=inputSize
-        self.n_classes=n_classes
+        self.sift_size = sift_size
+        self.n_classes = n_classes
+        self.sift = Sift()
 
 
-    def Procedure(self):
+    def procedure(self):
 
         # Save the best model among all learning rate
         if self.bestModel_allLR:
@@ -74,8 +72,7 @@ class Training():
                 print('')
 
             # Initialize the model
-            self.model = Model(inputSize=self.inputSize, n_classes=self.n_classes, baseModel=self.baseModel,
-                 modifiedModel=self.modifiedModel, dropOut=self.dropOut, BN=self.BN)
+            self.model = Classifier(self.sift_size, self.n_classes)
             if self.cuda:
                 self.model.cuda()
 
@@ -87,7 +84,7 @@ class Training():
 
             # Print model architecture
             print(self.model)
-            summary(self.model.model, input_size=(3, 32, 32))
+            summary(self.model.cnn, input_size=(3, 32, 32))
 
             # Start Training
             for self.epoch in range(self.epochNum):
@@ -141,8 +138,7 @@ class Training():
                 print('')
 
             # Load the model
-            self.model = Model(inputSize=self.inputSize, n_classes=self.n_classes, baseModel=self.baseModel,
-                               modifiedModel=self.modifiedModel, dropOut=self.dropOut, BN=self.BN)
+            self.model = Classifier(self.sift_size, self.n_classes)
             self.model.load_state_dict(torch.load(self.global_model_path))
             if self.cuda:
                 self.model.cuda()
@@ -157,11 +153,13 @@ class Training():
         self.model.train()
         for batch_idx, (data, target) in enumerate(self.train_loader):
             if self.cuda:
-                data, target = data.cuda(), target.cuda()
+                data, target = data, target.cuda()
             data, target = Variable(data), Variable(target)
 
             self.optimizer.zero_grad()
-            output = self.model(data)
+            output = self.model(data, self.sift)
+            #print(output)
+            #print(target)
             loss = self.criterion(output, target)
             loss.backward()
             self.optimizer.step()
