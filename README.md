@@ -1,1 +1,0 @@
-# SIFT-CNN-hybrid
