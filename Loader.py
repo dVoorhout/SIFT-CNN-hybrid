@@ -1,3 +1,6 @@
+"""
+This loader module loads the dataset Cifar10. It can also be used to generate a validation set.
+"""
 import numpy as np
 from torchvision import datasets, transforms
 import torch

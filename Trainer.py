@@ -4,7 +4,8 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.autograd import Variable
 from torchsummary import summary
-from Model import Model
+from cnn import Cnn as Model
+import classifier
 import os
 
 
