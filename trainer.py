@@ -7,20 +7,21 @@ from torchsummary import summary
 from classifier import Classifier
 from sift import Sift
 import os
+from cnn import Cnn
 
 
 class Training():
-    def __init__(self, train_loader, test_loader, validation=False, sift_size=1152, n_classes=10, dropOut=True, bestModel_allLR=False,
-                 lrPair=[0.001, 0.05, 0.01], epochNum=350):
+    def __init__(self, train_loader, test_loader, valida_folder, validation=False, sift_size=1152, n_classes=10, dropOut=True, bestModel_allLR=False,
+                 lrPair=[0.1, 0.05, 0.01], epochNum=350):
         self.model = None
         self.train_loader = train_loader
         self.test_loader = test_loader
-        self.valida_folder = None
+        self.valida_folder = valida_folder
         self.validation = validation
         self.dropOut = dropOut
         self.global_loss = 100000000.0
         self.global_acc = 0
-        self.global_model_path = ''
+        self.global_model_path = './'
         self.lr = 0
         self.cuda = torch.cuda.is_available()
         self.train_batch_size = 256
@@ -72,7 +73,7 @@ class Training():
                 print('')
 
             # Initialize the model
-            self.model = Classifier(self.sift_size, self.n_classes)
+            self.model = Cnn()
             if self.cuda:
                 self.model.cuda()
 
@@ -84,19 +85,19 @@ class Training():
 
             # Print model architecture
             print(self.model)
-            summary(self.model.cnn, input_size=(3, 32, 32))
+            summary(self.model, input_size=(3, 32, 32))
 
             # Start Training
             for self.epoch in range(self.epochNum):
                 self.scheduler.step()
                 self.train()
-                self.valid()
+                #self.valid()
 
                 # If keep diverging, stop at 100 epoch
-                if (self.epoch > 100) & (self.correct.item() > 0) & (
-                        (self.correct.item() / len(self.test_loader.dataset)) <= 0.1):
-                    print("Stop at acc of test set:", self.correct.item() / len(self.test_loader.dataset))
-                    break
+                # if (self.epoch > 100) & (self.correct.item() > 0) & (
+                #         (self.correct.item() / len(self.test_loader.dataset)) <= 0.1):
+                #     print("Stop at acc of test set:", self.correct.item() / len(self.test_loader.dataset))
+                #     break
 
             print('===================Result=========================')
             if self.validation:
@@ -151,22 +152,26 @@ class Training():
 
     def train(self):
         self.model.train()
+        total = 0
         for batch_idx, (data, target) in enumerate(self.train_loader):
             if self.cuda:
-                data, target = data, target.cuda()
+                data, target = data.cuda(), target.cuda()
             data, target = Variable(data), Variable(target)
-
-            self.optimizer.zero_grad()
-            output = self.model(data, self.sift)
-            #print(output)
             #print(target)
+            self.optimizer.zero_grad()
+            output = self.model(data)
+            #print(output)
+            #print(nn.functional.softmax(output))
             loss = self.criterion(output, target)
+            total += loss
             loss.backward()
             self.optimizer.step()
             if batch_idx % 100 == 0:
                 print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                     self.epoch, batch_idx * len(data), len(self.train_loader.dataset),
                                 100. * batch_idx / len(self.train_loader), loss.data))
+        print(total/50000)
+
 
     def valid(self):
         self.model.eval()
@@ -207,10 +212,10 @@ class Training():
             if self.test_loss < self.global_loss:
 
                 try:
-                    model_save_name = 'best_' + str(self.lr) + '_' + str(
-                        np.where(self.model.baseModel)[0][0]) + '_' + str(
-                        np.where(self.model.modifiedModel)[0][0]) + '_'
-                    path = F"/content/drive/My Drive/dl-reproducibility-project/model/{model_save_name}"
+                    # model_save_name = 'best_' + str(self.lr) + '_' + str(
+                    #     np.where(self.model.baseModel)[0][0]) + '_' + str(
+                    #     np.where(self.model.modifiedModel)[0][0]) + '_'
+                    path = F"./"
                     torch.save(self.model.state_dict(), path + '.epoch-{}.pt'.format(self.epoch))
                 except:
                     print('Failed to save best model to personal google drive')

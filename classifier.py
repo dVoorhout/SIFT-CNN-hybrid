@@ -7,6 +7,7 @@ from PIL import Image, ImageFilter
 from torchvision.transforms import Compose, CenterCrop, Resize, ToPILImage, ToTensor
 from cnn import Cnn
 from sift import Sift
+from torch.autograd import Variable
 import time
 
 IMG_SIZE = 33
@@ -21,49 +22,63 @@ class Classifier(nn.Module):
         self.cnn = Cnn()
 
         classifier_model = []
-        classifier_model += [nn.Linear(192 * 6 * 6 + num_sift_features, num_classes)]
-        classifier_model += [nn.Softmax(dim=1)]
+        classifier_model += [nn.Linear(192 * 6 * 6, 3456)]
+        classifier_model += [nn.Linear(3456, 864)]
+        classifier_model += [nn.Linear(864, 10)]
+        #classifier_model += [nn.Softmax(dim=1)]
 
         self.classifier = nn.Sequential(*classifier_model)
 
-    def forward(self, image, sift):
-        cnn_image, sift_image = preprocess(image)
-        cnn_features = self.cnn(cnn_image)
-        cnn_features = torch.reshape(cnn_features, (1, 192 * 6 * 6))
-        dense_sift_features = sift.perform_dense_sift(sift_image)
-        dense_sift_features_tensor = torch.tensor(dense_sift_features)
+    def forward(self, image, sift, batch_size):
+        cnn_images, sift_images = preprocess(image, batch_size)
+        cnn_features = self.cnn(cnn_images)
+        #print(cnn_features.shape)
+        #print(sift_images.shape)
+        cnn_features = torch.reshape(cnn_features, (batch_size, 192 * 6 * 6))
 
+        dense_sift_features_tensor = torch.zeros(batch_size, 1152)
+        for i, img in enumerate(sift_images):
+            img = img.astype(np.uint8)
+            #print(img.shape)
+            dense_sift_features = sift.perform_dense_sift(img)
+            dense_sift_features_tensor[i] = torch.tensor(dense_sift_features)
+
+        #print(dense_sift_features_tensor.shape)
         features = torch.cat([cnn_features, dense_sift_features_tensor.cuda()], dim=1)
-        return self.classifier(features)
+        return self.classifier(cnn_features)
 
 
-def preprocess(image):
+def preprocess(images, batch_size):
     # image = Image.open(path_to_image)
 
     # Process image for cnn
     #cnn_image = torchvision.transforms.ToTensor()(image.convert('RGB'))
     #cnn_image = image.unsqueeze(0)
-    cnn_image = image
+    cnn_images = images
 
     # Process image for sift
     transform = Compose([ToPILImage()])
-    sift_image = transform(torch.squeeze(image))
-    #sift_image.show()
+    sift_images = np.zeros((batch_size, 3, 33, 33))
+    for i, img in enumerate(images[0]):
+        sift_image = transform(img)
+        #sift_images = torch.Tensor.cpu(image).detach().numpy()[:,:,:,:]
+        #sift_image.show()
 
-    width, height = sift_image.size
-    crop_size = width if width <= height else height
+        width, height = sift_image.size
+        crop_size = width if width <= height else height
 
-    # Blurring for SIFT.
-    sift_image = sift_image.filter(ImageFilter.BLUR)
+        # Blurring for SIFT.
+        sift_image = sift_image.filter(ImageFilter.BLUR)
 
-    # Crop to be square, resize to desired size.
-    crop = Compose([
-        CenterCrop(crop_size),
-        Resize(IMG_SIZE)
-    ])
+        # Crop to be square, resize to desired size.
+        crop = Compose([
+            CenterCrop(crop_size),
+            Resize(IMG_SIZE)
+        ])
 
-    sift_image = crop(sift_image)
-    return cnn_image.cuda(), np.array(sift_image)
+        sift_images[i] = crop(sift_image)
+    #print(sift_images.shape)
+    return Variable(cnn_images.cuda()), sift_images
 
 
 def main():

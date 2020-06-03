@@ -1,16 +1,5 @@
 import torch.nn as nn
-import os
-from typing import Dict, Tuple
-
-import PIL
-import torchvision
-from PIL.Image import Image
-from torch import Tensor
-from torch.utils.data import DataLoader
-from torch.utils.data import Dataset
-import torchvision
-import random
-# import torch.nn.init as weight_init
+import torch
 
 
 # Cnn class that represents the cnn part of the network.
@@ -52,6 +41,13 @@ class Cnn(nn.Module):
                                   kernel_size=1, stride=1, padding=0)]
         architecture += [nn.ReLU()]
 
+        #architecture += [nn.Conv2d(base_filters * 2, 10,
+                                   #kernel_size=1, stride=1, padding=0)]
+        #architecture += [nn.ReLU()]
+
+        #architecture += [nn.AdaptiveAvgPool2d(1)]
+
+        #architecture += [nn.Softmax(dim=1)]
 
         # weight_init.normal_(sublayer_1.weight, mean=mean, std=std) # Not sure how they initialize their weights
         # weight_init.normal_(sublayer_2.weight, mean=mean, std=std)
@@ -60,5 +56,11 @@ class Cnn(nn.Module):
 
     def forward(self, x):
         """Standard forward."""
-        return self.model(x)
+        output = self.model(x)
+        #print(output.shape)
+        result = torch.squeeze(output)
+        #print(result.shape)
+        #result = torch.reshape(result, (1, len(result)))
+        #print(result.shape)
+        return result
 

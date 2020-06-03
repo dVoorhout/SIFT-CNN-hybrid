@@ -25,8 +25,8 @@ class Sift:
 
         # Define our key points as the middle points of 9 equal areas in the image.
         key_points = [cv.KeyPoint(x + SUB_IMG_SIZE / 2.0, y + SUB_IMG_SIZE / 2.0, SUB_IMG_SIZE)
-                      for y in range(0, img_array.shape[0], SUB_IMG_SIZE)
-                      for x in range(0, img_array.shape[1], SUB_IMG_SIZE)]
+                      for y in range(0, img_array.shape[1], SUB_IMG_SIZE)
+                      for x in range(0, img_array.shape[2], SUB_IMG_SIZE)]
 
         # Draw result
         # cv_img = cv.cvtColor(img_array, cv.COLOR_RGBA2BGR)
@@ -36,8 +36,10 @@ class Sift:
         # cv.destroyAllWindows()
 
         # Compute descriptors from given key points.
+        #print(img_array.shape)
+       # print(key_points)
         descriptors = self.sift.compute(img_array, key_points)
-
+        #print(descriptors)
         # Flatten to single feature container.
         features = descriptors[1].reshape([1, 1152])
         return features
