@@ -81,14 +81,3 @@ def preprocess(images, batch_size):
     return Variable(cnn_images.cuda()), sift_images
 
 
-def main():
-    cnn_image, sift_image = preprocess('test_resources/iconfinder_Rotation_131696.png')
-    sift = Sift()
-
-    classifier = Classifier(1152, 100)
-    output = classifier(cnn_image, sift_image, sift)
-    print(output)
-
-
-if __name__ == "__main__":
-    main()

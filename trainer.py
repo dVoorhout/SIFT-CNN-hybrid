@@ -73,7 +73,7 @@ class Training():
                 print('')
 
             # Initialize the model
-            self.model = Cnn()
+            self.model = Classifier(1152, 10)
             if self.cuda:
                 self.model.cuda()
 
@@ -85,7 +85,7 @@ class Training():
 
             # Print model architecture
             print(self.model)
-            summary(self.model, input_size=(3, 32, 32))
+            #summary(self.model, input_size=(3, 32, 32))
 
             # Start Training
             for self.epoch in range(self.epochNum):
@@ -152,26 +152,22 @@ class Training():
 
     def train(self):
         self.model.train()
-        total = 0
         for batch_idx, (data, target) in enumerate(self.train_loader):
             if self.cuda:
-                data, target = data.cuda(), target.cuda()
-            data, target = Variable(data), Variable(target)
+                data, target = data, target.cuda()
+            data, target = data, Variable(target)
             #print(target)
             self.optimizer.zero_grad()
-            output = self.model(data)
+            output = self.model(data, self.sift, data.shape[0])
             #print(output)
             #print(nn.functional.softmax(output))
             loss = self.criterion(output, target)
-            total += loss
             loss.backward()
             self.optimizer.step()
             if batch_idx % 100 == 0:
                 print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                     self.epoch, batch_idx * len(data), len(self.train_loader.dataset),
                                 100. * batch_idx / len(self.train_loader), loss.data))
-        print(total/50000)
-
 
     def valid(self):
         self.model.eval()
