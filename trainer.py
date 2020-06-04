@@ -12,7 +12,7 @@ from cnn import Cnn
 
 class Training():
     def __init__(self, train_loader, test_loader, valida_folder, validation=False, sift_size=1152, n_classes=10, dropOut=True, bestModel_allLR=False,
-                 lrPair=[0.1, 0.05, 0.01], epochNum=350):
+                 lrPair=[0.05, 0.05, 0.01], epochNum=350):
         self.model = None
         self.train_loader = train_loader
         self.test_loader = test_loader
@@ -91,7 +91,7 @@ class Training():
             for self.epoch in range(self.epochNum):
                 self.scheduler.step()
                 self.train()
-                #self.valid()
+                self.valid()
 
                 # If keep diverging, stop at 100 epoch
                 # if (self.epoch > 100) & (self.correct.item() > 0) & (
@@ -156,11 +156,9 @@ class Training():
             if self.cuda:
                 data, target = data, target.cuda()
             data, target = data, Variable(target)
-            #print(target)
+
             self.optimizer.zero_grad()
             output = self.model(data, self.sift, data.shape[0])
-            #print(output)
-            #print(nn.functional.softmax(output))
             loss = self.criterion(output, target)
             loss.backward()
             self.optimizer.step()
@@ -177,10 +175,10 @@ class Training():
         with torch.no_grad():
             for data, target in self.valida_folder:
                 if self.cuda:
-                    data, target = data.cuda(), target.cuda()
-                data, target = Variable(data), Variable(target)
+                    data, target = data, target.cuda()
+                data, target = data, Variable(target)
 
-                output = self.model(data)
+                output = self.model(data, self.sift, data.shape[0])
                 # sum up batch loss
                 self.test_loss += self.criterion(output, target).data
                 # get the index of the max log-probability
