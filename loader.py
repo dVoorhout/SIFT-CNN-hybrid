@@ -1,6 +1,3 @@
-"""
-This loader module loads the dataset Cifar10. It can also be used to generate a validation set.
-"""
 import numpy as np
 from torchvision import datasets, transforms
 import torch
@@ -12,7 +9,8 @@ class Loader():
         self.test_loader = None
         self.valida_folder = None
         self.validation = validation
-        self.cuda = torch.cuda.is_available()
+        if f_cuda:
+            self.cuda = torch.cuda.is_available()
         self.train_batch_size = 256
         self.test_batch_size = 64
         self.dataset_path = './cifar10'
@@ -20,7 +18,10 @@ class Loader():
 
     def createDataset(self):
         CIFAR10_Train = datasets.CIFAR10(root=self.dataset_path, train=True, download=True)
-        kwargs = {'num_workers': 1, 'pin_memory': True} if self.cuda else {}
+        if f_cuda:
+            kwargs = {'num_workers': 1, 'pin_memory': True} if self.cuda else {}
+        else:
+            kwargs = {}
 
         if self.validation:
             np.random.seed(1)
@@ -60,6 +61,7 @@ class Loader():
             transforms.ToTensor(),
             transforms.Normalize(train_mean, train_std),
         ])
+
         self.test_loader = torch.utils.data.DataLoader(
             datasets.CIFAR10(root=self.dataset_path, train=False, download=True,
                              transform=transform_test),
