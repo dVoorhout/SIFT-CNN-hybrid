@@ -16,11 +16,11 @@ class Cnn(nn.Module):
         # std = 0.02
         architecture += [nn.Dropout(p=0.2, inplace=False)]
         architecture += [nn.Conv2d(input_channels, base_filters,
-                               kernel_size=5, stride=1, padding=2)]
+                               kernel_size=5, stride=1, padding=1)]
         architecture += [nn.ReLU()]
 
         architecture += [nn.Conv2d(base_filters, base_filters,
-                               kernel_size=3, stride=2, padding=0)]
+                               kernel_size=5, stride=2, padding=1)]
         architecture += [nn.ReLU()]
         architecture += [nn.Dropout(p=0.5, inplace=False)]
 
@@ -29,7 +29,7 @@ class Cnn(nn.Module):
         architecture += [nn.ReLU()]
 
         architecture += [nn.Conv2d(base_filters * 2, base_filters * 2,
-                                  kernel_size=3, stride=2, padding=0)]
+                                  kernel_size=5, stride=2, padding=1)]
         architecture += [nn.ReLU()]
         architecture += [nn.Dropout(p=0.5, inplace=False)]
 

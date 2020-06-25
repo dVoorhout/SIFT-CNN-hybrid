@@ -73,7 +73,7 @@ class Training():
                 print('')
 
             # Initialize the model
-            self.model = Classifier(1152, 10)
+            self.model = Classifier(1152, 10, self.sift)
             if self.cuda:
                 self.model.cuda()
 
@@ -85,7 +85,8 @@ class Training():
 
             # Print model architecture
             print(self.model)
-            #summary(self.model, input_size=(3, 32, 32))
+            summary(self.model.cnn, input_size=(3, 32, 32))
+            summary(self.model.classifier, input_size=(256, 192 * 5 * 5 + 1152))
 
             # Start Training
             for self.epoch in range(self.epochNum):
@@ -158,7 +159,7 @@ class Training():
             data, target = data, Variable(target)
 
             self.optimizer.zero_grad()
-            output = self.model(data, self.sift, data.shape[0])
+            output = self.model(data)
             loss = self.criterion(output, target)
             loss.backward()
             self.optimizer.step()
@@ -178,7 +179,7 @@ class Training():
                     data, target = data, target.cuda()
                 data, target = data, Variable(target)
 
-                output = self.model(data, self.sift, data.shape[0])
+                output = self.model(data)
                 # sum up batch loss
                 self.test_loss += self.criterion(output, target).data
                 # get the index of the max log-probability
@@ -194,7 +195,7 @@ class Training():
         if self.test_loss < self.best_loss:
             self.best_epoch = self.epoch
             self.best_loss = self.test_loss
-            torch.save(self.model, "best_" + str(self.lr) + ".pt")
+            torch.save(self.model.cnn, "best_" + str(self.lr) + ".pt")
             '''
             try:
                 if self.gsync_save:

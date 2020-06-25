@@ -16,38 +16,53 @@ SUB_IMG_SIZE = int(math.sqrt(IMG_SIZE ** 2 / 9))   # Size of sub image for dense
 
 
 class Classifier(nn.Module):
-    def __init__(self, num_sift_features, num_classes):
+    def __init__(self, num_sift_features, num_classes, sift):
         super(Classifier, self).__init__()
 
         # define the cnn model:
         self.cnn = Cnn()
+        self.sift = sift
 
         classifier_model = []
-        classifier_model += [nn.Linear(192 * 6 * 6 + 1152, 3456)]
+        classifier_model += [nn.Linear(192 * 5 * 5 + 1152, 2976)]
         classifier_model += [nn.Dropout(0.2)]
         classifier_model += [nn.ReLU()]
-        classifier_model += [nn.Linear(3456, 864)]
+        classifier_model += [nn.Linear(2976, 1000)]
         classifier_model += [nn.Dropout(0.2)]
         classifier_model += [nn.ReLU()]
-        classifier_model += [nn.Linear(864, 10)]
+        classifier_model += [nn.Linear(1000, 10)]
+        # classifier_model += [nn.Dropout(0.2)]
+        # classifier_model += [nn.ReLU()]
+        # classifier_model += [nn.Linear(864, 432)]
+        # classifier_model += [nn.Dropout(0.2)]
+        # classifier_model += [nn.ReLU()]
+        # classifier_model += [nn.Linear(432, 10)]
+
+        # classifier_model += [nn.Linear(192 * 6 * 6 + 1152, 192 * 6 * 6 + 1152)]
+        # classifier_model += [nn.ReLU()]
+        # classifier_model += [nn.Dropout(0.2)]
+        # classifier_model += [nn.Linear(192 * 6 * 6 + 1152, 1000)]
+        # classifier_model += [nn.ReLU()]
+        # classifier_model += [nn.Dropout(0.2)]
+        # classifier_model += [nn.Linear(1000, 10)]
         #classifier_model += [nn.Softmax(dim=1)]
 
         self.classifier = nn.Sequential(*classifier_model)
 
-    def forward(self, image, sift, batch_size):
-        cnn_images, sift_images = preprocess(image, batch_size)
+    def forward(self, image):
+        cnn_images, sift_images = preprocess(image, image.shape[0])
 
         # Get CNN feature maps
         cnn_features = self.cnn(cnn_images)
 
         # Reshape CNN features for the Dense layer
-        cnn_features = torch.reshape(cnn_features, (batch_size, 192 * 6 * 6))
+        cnn_features = torch.reshape(cnn_features, (image.shape[0], 192 * 5 * 5))
 
         # Sequentially calculate SIFT tensor
-        dense_sift_features_tensor = torch.zeros(batch_size, 1152)
+        dense_sift_features_tensor = torch.zeros(image.shape[0], 1152)
         for i, img in enumerate(sift_images):
             img = img.astype(np.uint8)
-            dense_sift_features = sift.perform_dense_sift(img)
+            dense_sift_features = self.sift.perform_dense_sift(img)
             dense_sift_features_tensor[i] = torch.tensor(dense_sift_features)
 
         # Concatenate CNN and SIFT features
