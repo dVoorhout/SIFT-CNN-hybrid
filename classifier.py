@@ -24,6 +24,7 @@ class Classifier(nn.Module):
         self.sift = sift
 
         classifier_model = []
+        classifier_model += [nn.BatchNorm1d(num_features=192 * 5 * 5 + 1152)]
         classifier_model += [nn.Linear(192 * 5 * 5 + 1152, 2976)]
         classifier_model += [nn.Dropout(0.2)]
         classifier_model += [nn.ReLU()]
@@ -67,7 +68,7 @@ class Classifier(nn.Module):
 
         # Concatenate CNN and SIFT features
         features = torch.cat([cnn_features, dense_sift_features_tensor.cuda()], dim=1)
-
+       # print(features.shape)
         # Create classification of all features
         return self.classifier(features)
 
@@ -78,12 +79,11 @@ def preprocess(images, batch_size):
 
     # Process images for sift
     transform = Compose([ToPILImage()])
-    sift_images = np.zeros((batch_size, 3, 33, 33))
+    sift_images = np.zeros((batch_size, 33, 33, 3))
 
     # We sequentially process each image in the batch to prepare it for SIFT feature extraction
-    for i, img in enumerate(images[0]):
+    for i, img in enumerate(images):
         sift_image = transform(img)
-
         width, height = sift_image.size
         crop_size = width if width <= height else height
 
@@ -95,9 +95,9 @@ def preprocess(images, batch_size):
             CenterCrop(crop_size),
             Resize(IMG_SIZE)
         ])
-
+        sift_image = crop(sift_image)
         # Add the processed image to our numpy array
-        sift_images[i] = crop(sift_image)
+        sift_images[i] =sift_image
 
     # We return the Cuda Variable version of the initial tensor for the cnn as we couldn't do that before; we had
     # to first process it for SIFT

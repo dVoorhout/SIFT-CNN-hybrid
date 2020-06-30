@@ -86,7 +86,7 @@ class Training():
             # Print model architecture
             print(self.model)
             summary(self.model.cnn, input_size=(3, 32, 32))
-            summary(self.model.classifier, input_size=(256, 192 * 5 * 5 + 1152))
+            #summary(self.model.classifier, input_size=(192 * 5 * 5 + 1152))
 
             # Start Training
             for self.epoch in range(self.epochNum):

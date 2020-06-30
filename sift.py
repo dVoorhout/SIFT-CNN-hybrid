@@ -22,11 +22,11 @@ class Sift:
         :param img_array: the input image as a numpy array.
         :return: array of 2048 features.
         """
-
+        #print(img_array.shape)
         # Define our key points as the middle points of 9 equal areas in the image.
         key_points = [cv.KeyPoint(x + SUB_IMG_SIZE / 2.0, y + SUB_IMG_SIZE / 2.0, SUB_IMG_SIZE)
-                      for y in range(0, img_array.shape[1], SUB_IMG_SIZE)
-                      for x in range(0, img_array.shape[2], SUB_IMG_SIZE)]
+                      for y in range(0, img_array.shape[0], SUB_IMG_SIZE)
+                      for x in range(0, img_array.shape[1], SUB_IMG_SIZE)]
 
         # Draw result
         # cv_img = cv.cvtColor(img_array, cv.COLOR_RGBA2BGR)
